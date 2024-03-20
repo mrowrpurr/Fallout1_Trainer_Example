@@ -1,0 +1,87 @@
+#ChatMessage {
+    background-color: #333;
+
+    &::hover {
+        background-color: #666;
+    }
+
+    QLabel {
+        font-size: 20px;
+    }
+
+    QLabel[class="message"] {
+        color: white;
+    }
+
+    QLabel[class="username"] {
+        font-weight: bold;
+        margin-left: 5px;
+    }
+
+    QLabel[class="separator"] {
+        padding-right: 10px;
+    }
+}
+
+#ChatMessage[class="hover"] QLabel {
+    background-color: red;
+}
+
+#TwitchBot * {
+    font-size: 30px;
+}
+
+#ObsMicrophone {
+    * {
+        font-size: 30px;
+    }
+
+    [class="title"] {
+        font-size: 50px;
+        font-weight: bold;
+    }
+
+    #MicrophoneStatus {
+        font-size: 35px;
+        font-style: italic;
+        color: rgb(179, 0, 0);
+    }
+
+    #MicrophoneStatus[class*="|obs-enabled|"] {
+        color: green;
+        font-weight: bold;
+    }
+
+    #ToggleMicrophoneEnabled {
+        padding: 10px 5px 10px 5px;
+
+        &[class*="|mic-enabled|"] {
+            background-color: rgb(255, 0, 0);
+            border: none;
+            font-weight: bold;
+        }
+    }
+
+    #SpeechToTextStatus {
+        padding-top: 20px;
+    }
+
+    #SpeechToTextStatus[class*="|stt-enabled|"] {
+        color: green;
+        font-weight: bold;
+    }
+
+    #SpeechToTextLatestUtterance {
+        padding: 20px;
+    }
+
+    #SpeechToTextLatestUtterance[class*="|partial|"] {
+        color: rgb(4, 88, 148);
+        font-style: italic;
+    }
+
+    #SpeechToTextLatestUtterance[class*="|final|"] {
+        color: green;
+        font-weight: bold;
+    }
+}

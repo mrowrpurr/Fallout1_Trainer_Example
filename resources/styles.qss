@@ -1,0 +1,62 @@
+/* Generated File - DO NOT EDIT */
+
+#ChatMessage {
+  background-color: #333; }
+  #ChatMessage::hover {
+    background-color: #666; }
+  #ChatMessage QLabel {
+    font-size: 20px; }
+  #ChatMessage QLabel[class="message"] {
+    color: white; }
+  #ChatMessage QLabel[class="username"] {
+    font-weight: bold;
+    margin-left: 5px; }
+  #ChatMessage QLabel[class="separator"] {
+    padding-right: 10px; }
+
+#ChatMessage[class="hover"] QLabel {
+  background-color: red; }
+
+#TwitchBot * {
+  font-size: 30px; }
+
+#ObsMicrophone * {
+  font-size: 30px; }
+
+#ObsMicrophone [class="title"] {
+  font-size: 50px;
+  font-weight: bold; }
+
+#ObsMicrophone #MicrophoneStatus {
+  font-size: 35px;
+  font-style: italic;
+  color: #b30000; }
+
+#ObsMicrophone #MicrophoneStatus[class*="|obs-enabled|"] {
+  color: green;
+  font-weight: bold; }
+
+#ObsMicrophone #ToggleMicrophoneEnabled {
+  padding: 10px 5px 10px 5px; }
+  #ObsMicrophone #ToggleMicrophoneEnabled[class*="|mic-enabled|"] {
+    background-color: red;
+    border: none;
+    font-weight: bold; }
+
+#ObsMicrophone #SpeechToTextStatus {
+  padding-top: 20px; }
+
+#ObsMicrophone #SpeechToTextStatus[class*="|stt-enabled|"] {
+  color: green;
+  font-weight: bold; }
+
+#ObsMicrophone #SpeechToTextLatestUtterance {
+  padding: 20px; }
+
+#ObsMicrophone #SpeechToTextLatestUtterance[class*="|partial|"] {
+  color: #045894;
+  font-style: italic; }
+
+#ObsMicrophone #SpeechToTextLatestUtterance[class*="|final|"] {
+  color: green;
+  font-weight: bold; }

@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "f1_trainer"
+version = "0.1.0"
+description = "UI game 'trainer' for Fallout 1 (just a demo!)"
+authors = []
+packages = [{ include = "f1_trainer" }]
+
+[tool.poetry.scripts]
+app = "f1_trainer.app.__main__:dev"
+dev = "f1_trainer.app.__main__:dev"
+prod = "f1_trainer.app.__main__:prod"
+
+[tool.poe.tasks]
+qrc = "pyside6-rcc -o f1_trainer/app/qrc_resources.py ../../resources/resources.qrc"
+windows-exe = "pyinstaller --onefile --windowed --noconfirm --name \"Fallout1 Trainer\" --icon ../../resources/images/icon.ico app/__main__.py"
+windows-dir = "pyinstaller --onedir --windowed --noconfirm --name Fallout1Trainer --icon ../../resources/images/WindowsIcon.ico src/forc/app/__main__.py"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.13"
+pyside6 = "^6.6.2"
+qasync = "^0.27.1"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^3.0.3"
+mypy = "^1.8.0"
+poethepoet = "^0.24.4"
+pyinstaller = "^6.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

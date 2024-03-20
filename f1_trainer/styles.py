@@ -6,7 +6,8 @@ from re import Match
 import sass  # type: ignore
 from PySide6.QtCore import QFileSystemWatcher
 from PySide6.QtWidgets import QApplication
-from qt_helpers.files import write_file
+
+from f1_trainer.files import write_file
 
 
 @dataclass

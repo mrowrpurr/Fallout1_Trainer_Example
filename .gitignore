@@ -1,0 +1,6 @@
+.xmake
+compile_commands
+build
+
+.venv
+*.pyc

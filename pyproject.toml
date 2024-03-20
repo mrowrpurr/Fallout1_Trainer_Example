@@ -21,6 +21,7 @@ pyside6 = "^6.6.2"
 qasync = "^0.27.1"
 python-dotenv = "^1.0.1"
 libsass = "^0.23.0"
+pywin32 = "^306"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.0.3"

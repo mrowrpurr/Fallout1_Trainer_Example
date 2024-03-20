@@ -29,6 +29,7 @@ class PROCESSENTRY32(ctypes.Structure):
 
 
 def get_process_id(process_name: str) -> Optional[int]:
+    print(f"Getting process ID for: {process_name}...")
     h_snapshot = kernel32.CreateToolhelp32Snapshot(0x00000002, 0)  # TH32CS_SNAPPROCESS
     if h_snapshot == ctypes.c_void_p(-1).value:
         return None
@@ -47,7 +48,9 @@ def get_process_id(process_name: str) -> Optional[int]:
 
 
 def inject_dll(process_name: str, dll_path: str) -> bool:
+    print("Injecting DLL...")
     pid = get_process_id(process_name)
+    print(f"PID: {pid}")
     if pid is None:
         return False
 
@@ -72,17 +75,23 @@ def inject_dll(process_name: str, dll_path: str) -> bool:
     ):
         return False
 
-    thread_id = wintypes.DWORD(0)
-    if not kernel32.CreateRemoteThread(
+    h_thread_id = kernel32.CreateRemoteThread(
         h_process,
         None,
         0,
         kernel32.LoadLibraryA,
         arg_address,
         0,
-        ctypes.byref(thread_id),
-    ):
+        0,
+    )
+
+    if h_thread_id:
+        ctypes.windll.kernel32.WaitForSingleObject(
+            h_thread_id, ctypes.wintypes.DWORD(0xFFFFFFFF)
+        )  # INFINITE
+        kernel32.CloseHandle(h_thread_id)
+    else:
         return False
 
-    kernel32.CloseHandle(h_process)
+    kernel32.CloseHandle(h_process)  # Close the process handle here
     return True

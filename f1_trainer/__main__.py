@@ -2,14 +2,13 @@ import asyncio
 from pathlib import Path
 
 import qasync  # type: ignore
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel
 
 from f1_trainer.application import Application
 from f1_trainer.files import read_file
 from f1_trainer.fonts import load_fonts
 from f1_trainer.qrc_resources import qt_resource_data
 from f1_trainer.styles import watch_qss
+from f1_trainer.widgets.window import Window
 
 QRC = qt_resource_data
 
@@ -44,10 +43,9 @@ def main(development: bool = False) -> None:
         app.setStyleSheet(read_file(STYLES_QSS_RESOURCE))
 
     # Hello, app!
-    window = QLabel("Hello, Fallout 1 trainer!")
-    window.show()
+    window = Window()
     window.resize(800, 600)
-    window.setWindowIcon(QPixmap(":/icon.ico"))
+    window.show()
 
     # Run the app
     with event_loop:  # type: ignore

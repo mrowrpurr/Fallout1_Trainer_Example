@@ -1,97 +1,106 @@
 import ctypes
-import ctypes.wintypes as wintypes
-from typing import Optional
+import os
+from ctypes.wintypes import DWORD
 
-# Load necessary DLLs
+# Import necessary Windows APIs from pywin32
 kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-psapi = ctypes.WinDLL("psapi", use_last_error=True)
 
-# Define necessary types and prototypes
-PROCESS_ALL_ACCESS = 0x000F0000 | 0x00100000 | 0xFFF
-MEM_COMMIT = 0x1000
-MEM_RESERVE = 0x2000
+# Constants
+PROCESS_ALL_ACCESS = 0x001F0FFF
+MEM_COMMIT_RESERVE = 0x1000 | 0x2000
 PAGE_READWRITE = 0x04
 
 
+# Define necessary structures
 class PROCESSENTRY32(ctypes.Structure):
     _fields_ = [
-        ("dwSize", wintypes.DWORD),
-        ("cntUsage", wintypes.DWORD),
-        ("th32ProcessID", wintypes.DWORD),
-        ("th32DefaultHeapID", ctypes.POINTER(wintypes.ULONG)),
-        ("th32ModuleID", wintypes.DWORD),
-        ("cntThreads", wintypes.DWORD),
-        ("th32ParentProcessID", wintypes.DWORD),
-        ("pcPriClassBase", wintypes.LONG),
-        ("dwFlags", wintypes.DWORD),
-        ("szExeFile", ctypes.c_char * wintypes.MAX_PATH),
-    ]
+        ("dwSize", DWORD),
+        ("cntUsage", DWORD),
+        ("th32ProcessID", DWORD),
+        ("th32DefaultHeapID", ctypes.POINTER(DWORD)),
+        ("th32ModuleID", DWORD),
+        ("cntThreads", DWORD),
+        ("th32ParentProcessID", DWORD),
+        ("pcPriClassBase", DWORD),
+        ("dwFlags", DWORD),
+        ("szExeFile", ctypes.c_char * 260),
+    ]  # MAX_PATH
 
 
-def get_process_id(process_name: str) -> Optional[int]:
-    print(f"Getting process ID for: {process_name}...")
-    h_snapshot = kernel32.CreateToolhelp32Snapshot(0x00000002, 0)  # TH32CS_SNAPPROCESS
-    if h_snapshot == ctypes.c_void_p(-1).value:
-        return None
-
+def get_process_id_by_name(exe_name: str) -> int:
+    h_snapshot = kernel32.CreateToolhelp32Snapshot(2, 0)  # TH32CS_SNAPPROCESS
     entry = PROCESSENTRY32()
     entry.dwSize = ctypes.sizeof(PROCESSENTRY32)
     if kernel32.Process32First(h_snapshot, ctypes.byref(entry)):
         while True:
-            if process_name.encode("utf-8") == entry.szExeFile:
+            if entry.szExeFile.decode("utf-8") == exe_name:
+                pid = entry.th32ProcessID
                 kernel32.CloseHandle(h_snapshot)
-                return entry.th32ProcessID
+                return pid
             if not kernel32.Process32Next(h_snapshot, ctypes.byref(entry)):
                 break
     kernel32.CloseHandle(h_snapshot)
-    return None
+    return 0
 
 
 def inject_dll(process_name: str, dll_path: str) -> bool:
-    print("Injecting DLL...")
-    pid = get_process_id(process_name)
-    print(f"PID: {pid}")
-    if pid is None:
+    if not os.path.exists(dll_path):
+        print(f"Error: DLL path '{dll_path}' does not exist.")
+        return False
+
+    pid = get_process_id_by_name(process_name)
+    if pid == 0:
+        print(f"Error: Process '{process_name}' not found.")
         return False
 
     h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, pid)
     if not h_process:
+        print("Error: Could not open target process.")
         return False
 
-    dll_path_bytes = dll_path.encode("utf-8")
+    dll_path_encoded = dll_path.encode("utf-8")
+    dll_size = len(dll_path_encoded) + 1  # Plus null terminator
     arg_address = kernel32.VirtualAllocEx(
-        h_process, None, len(dll_path_bytes), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE
+        h_process, None, dll_size, MEM_COMMIT_RESERVE, PAGE_READWRITE
     )
+
     if not arg_address:
+        print("Error: Could not allocate memory in target process.")
+        kernel32.CloseHandle(h_process)
         return False
 
-    written = ctypes.c_size_t(0)
+    bytes_written = DWORD(0)
     if not kernel32.WriteProcessMemory(
-        h_process,
-        arg_address,
-        dll_path_bytes,
-        len(dll_path_bytes),
-        ctypes.byref(written),
+        h_process, arg_address, dll_path_encoded, dll_size, ctypes.byref(bytes_written)
     ):
+        print("Error: Could not write to process memory.")
+        kernel32.VirtualFreeEx(h_process, arg_address, 0, 0x8000)  # MEM_RELEASE
+        kernel32.CloseHandle(h_process)
         return False
 
-    h_thread_id = kernel32.CreateRemoteThread(
+    # Get the address of LoadLibraryA
+    load_library_address = ctypes.windll.kernel32.GetProcAddress(
+        ctypes.windll.kernel32.GetModuleHandleA("kernel32.dll"), b"LoadLibraryA"
+    )
+
+    h_thread = kernel32.CreateRemoteThread(
+        # h_process, None, 0, kernel32.LoadLibraryA, arg_address, 0, None
         h_process,
         None,
         0,
-        kernel32.LoadLibraryA,
+        load_library_address,
         arg_address,
         0,
-        0,
+        None,
     )
-
-    if h_thread_id:
-        ctypes.windll.kernel32.WaitForSingleObject(
-            h_thread_id, ctypes.wintypes.DWORD(0xFFFFFFFF)
-        )  # INFINITE
-        kernel32.CloseHandle(h_thread_id)
-    else:
+    if not h_thread:
+        print("Error: Could not create remote thread.")
+        kernel32.VirtualFreeEx(h_process, arg_address, 0, 0x8000)  # MEM_RELEASE
+        kernel32.CloseHandle(h_process)
         return False
 
-    kernel32.CloseHandle(h_process)  # Close the process handle here
+    # kernel32.WaitForSingleObject(h_thread, 0xFFFFFFFF)  # Wait indefinitely
+    # kernel32.CloseHandle(h_thread)
+    # kernel32.VirtualFreeEx(h_process, arg_address, 0, 0x8000)  # MEM_RELEASE
+    # kernel32.CloseHandle(h_process)
     return True

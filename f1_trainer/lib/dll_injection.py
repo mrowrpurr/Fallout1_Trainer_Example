@@ -1,6 +1,6 @@
 import ctypes
 import os
-from ctypes.wintypes import DWORD
+from ctypes.wintypes import DWORD, HANDLE
 
 # Import necessary Windows APIs from pywin32
 kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -58,11 +58,31 @@ def inject_dll(process_name: str, dll_path: str) -> bool:
         print("Error: Could not open target process.")
         return False
 
+        ###
+    kernel32.VirtualAllocEx.restype = ctypes.c_void_p
+    kernel32.VirtualAllocEx.argtypes = [
+        HANDLE,
+        ctypes.c_void_p,
+        ctypes.c_size_t,
+        DWORD,
+        DWORD,
+    ]
+
+    kernel32.WriteProcessMemory.argtypes = [
+        HANDLE,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_size_t,
+        ctypes.POINTER(DWORD),
+    ]
+    ###
+
     dll_path_encoded = dll_path.encode("utf-8")
     dll_size = len(dll_path_encoded) + 1  # Plus null terminator
     arg_address = kernel32.VirtualAllocEx(
         h_process, None, dll_size, MEM_COMMIT_RESERVE, PAGE_READWRITE
     )
+    print(f"Allocated memory at: {hex(arg_address)}")
 
     if not arg_address:
         print("Error: Could not allocate memory in target process.")
@@ -82,6 +102,17 @@ def inject_dll(process_name: str, dll_path: str) -> bool:
     load_library_address = ctypes.windll.kernel32.GetProcAddress(
         ctypes.windll.kernel32.GetModuleHandleA("kernel32.dll"), b"LoadLibraryA"
     )
+
+    kernel32.CreateRemoteThread.argtypes = [
+        HANDLE,  # hProcess
+        ctypes.c_void_p,  # lpThreadAttributes
+        ctypes.c_size_t,  # dwStackSize
+        ctypes.c_void_p,  # lpStartAddress (pointer to the function)
+        ctypes.c_void_p,  # lpParameter
+        DWORD,  # dwCreationFlags
+        ctypes.POINTER(DWORD),  # lpThreadId
+    ]
+    kernel32.CreateRemoteThread.restype = HANDLE
 
     h_thread = kernel32.CreateRemoteThread(
         # h_process, None, 0, kernel32.LoadLibraryA, arg_address, 0, None
@@ -103,4 +134,7 @@ def inject_dll(process_name: str, dll_path: str) -> bool:
     # kernel32.CloseHandle(h_thread)
     # kernel32.VirtualFreeEx(h_process, arg_address, 0, 0x8000)  # MEM_RELEASE
     # kernel32.CloseHandle(h_process)
+
+    print(f"Injected DLL: {dll_path} into process: {process_name} (PID: {pid}).")
+
     return True

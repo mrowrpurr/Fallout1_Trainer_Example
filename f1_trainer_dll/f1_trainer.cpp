@@ -29,7 +29,8 @@ void ServerThreadFunction() {
 
             if (result) {
                 std::string receivedText(buffer, bytesRead);
-                std::string responseText = std::format("You sent us the text: '{}'", receivedText);
+                std::string responseText =
+                    std::format("CHANGED! You sent us the text: '{}'", receivedText);
 
                 DWORD bytesWritten;
                 WriteFile(pipe, responseText.c_str(), responseText.length(), &bytesWritten, NULL);

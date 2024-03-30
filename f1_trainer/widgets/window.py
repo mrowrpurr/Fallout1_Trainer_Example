@@ -1,5 +1,6 @@
 import platform
 
+import win32file
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
@@ -16,6 +17,7 @@ class Window(QWidget):
     _txt_dll_path: QLineEdit
     _btn_inject: QPushButton
     _btn_eject: QPushButton
+    _btn_quick_test: QPushButton
 
     def __init__(self) -> None:
         super().__init__()
@@ -43,6 +45,7 @@ class Window(QWidget):
         self._txt_dll_path.setPlaceholderText("DLL path")
         self._btn_inject = QPushButton("Inject")
         self._btn_eject = QPushButton("Eject")
+        self._btn_quick_test = QPushButton("Quick Test")
 
     def _layout(self):
         layout = QVBoxLayout()
@@ -53,10 +56,12 @@ class Window(QWidget):
         layout.addWidget(self._btn_inject)
         layout.addWidget(self._btn_eject)
         layout.addStretch()
+        layout.addWidget(self._btn_quick_test)
 
     def _events(self):
         self._btn_inject.clicked.connect(self._on_inject)
         self._btn_eject.clicked.connect(self._on_eject)
+        self._btn_quick_test.clicked.connect(self._on_quick_test)
 
     def _on_inject(self) -> None:
         dll_absolute_path = self._txt_dll_path.text()
@@ -66,4 +71,29 @@ class Window(QWidget):
 
     def _on_eject(self) -> None:
         print("TODO")
-        pass
+
+    def run_client(self):
+        pipe_name = r"\\.\pipe\ExamplePipe"
+        try:
+            handle = win32file.CreateFile(
+                pipe_name,
+                win32file.GENERIC_READ | win32file.GENERIC_WRITE,
+                0,
+                None,
+                win32file.OPEN_EXISTING,
+                0,
+                None,
+            )
+
+            test_string = "hello world"
+            win32file.WriteFile(handle, test_string.encode())
+
+            resp = win32file.ReadFile(handle, 1024)
+            print(f"Received: {resp[1].decode()}")
+
+            win32file.CloseHandle(handle)
+        except Exception as e:
+            print(f"Failed to communicate with the named pipe: {e}")
+
+    def _on_quick_test(self) -> None:
+        self.run_client()

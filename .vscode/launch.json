@@ -8,6 +8,12 @@
       "python": "${workspaceFolder}/.venv/Scripts/python.exe",
       "justMyCode": false,
       "module": "f1_trainer"
-    }
+    },
+    {
+            "name": "C++ Debugger",
+            "type": "cppvsdbg",
+            "request": "attach",
+        }
+    ]
   ]
 }
